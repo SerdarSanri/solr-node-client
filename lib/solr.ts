@@ -115,9 +115,11 @@ export class Client {
       : this.options.tls
       ? 'https://'
       : 'http://';
-
+    // Build url with options provided. Ignore port and colon if options.port is not provided instead of 
+    // creating invalid url. ie. https://solr.example.com:/solr
+    const url = `${urlPrefix}${this.options.host}${this.options.port !== '' ? ':' + this.options.port : ''}`
     this.undiciClient = new UndiciClient(
-      `${urlPrefix}${this.options.host}:${this.options.port}`,
+      url,
       {
         connect: this.options.tls,
       }
@@ -172,7 +174,7 @@ export class Client {
     acceptContentType: string
   ): Promise<T> {
     const protocol = this.options.secure ? 'https' : 'http';
-    const url = `${protocol}://${this.options.host}:${this.options.port}${path}`;
+    const url = `${protocol}${this.options.host}${this.options.port !== '' ? ':' + this.options.port : ''}${path}`; 
     const requestOptions: UndiciRequestOptions = {
       ...this.options.request,
       method,
@@ -323,9 +325,9 @@ export class Client {
       headers['authorization'] = this.options.authorization;
     }
     const protocol = this.options.secure ? 'https' : 'http';
+    const url = `${urlPrefix}${this.options.host}${this.options.port !== '' ? ':' + this.options.port : ''}${path}`
     const optionsRequest = {
-      url:
-        protocol + '://' + this.options.host + ':' + this.options.port + path,
+      url,
       method: 'POST',
       headers: headers,
     };
