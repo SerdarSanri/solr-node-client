@@ -81,6 +81,7 @@ export class Client {
   private readonly COLLECTIONS_HANDLER: string;
   private readonly SELECT_HANDLER: string;
   private readonly undiciClient: UndiciClient;
+  private readonly url: string;
 
   constructor(options: SolrClientParams = {}) {
     this.options = {
@@ -117,9 +118,10 @@ export class Client {
       : 'http://';
     // Build url with options provided. Ignore port and colon if options.port is not provided instead of 
     // creating invalid url. ie. https://solr.example.com:/solr
-    const url = `${urlPrefix}${this.options.host}${this.options.port !== '' ? ':' + this.options.port : ''}`
+    this.url = `${urlPrefix}${this.options.host}${this.options.port !== '' ? ':' + this.options.port : ''}`
+    
     this.undiciClient = new UndiciClient(
-      url,
+      this.url,
       {
         connect: this.options.tls,
       }
@@ -173,8 +175,7 @@ export class Client {
     bodyContentType: string | null,
     acceptContentType: string
   ): Promise<T> {
-    const protocol = this.options.secure ? 'https' : 'http';
-    const url = `${protocol}${this.options.host}${this.options.port !== '' ? ':' + this.options.port : ''}${path}`; 
+    const url = `${this.url}${path}`; 
     const requestOptions: UndiciRequestOptions = {
       ...this.options.request,
       method,
@@ -323,9 +324,8 @@ export class Client {
     };
     if (this.options.authorization) {
       headers['authorization'] = this.options.authorization;
-    }
-    const protocol = this.options.secure ? 'https' : 'http';
-    const url = `${urlPrefix}${this.options.host}${this.options.port !== '' ? ':' + this.options.port : ''}${path}`
+    } 
+    const url = `${this.url}${path}`; 
     const optionsRequest = {
       url,
       method: 'POST',
@@ -564,8 +564,8 @@ export class Client {
       1 +
       Buffer.byteLength(queryString);
     const method =
-      this.options.get_max_request_entity_size === false ||
-      approxUrlLength <= this.options.get_max_request_entity_size
+      this.options.get_max_request_entity_size === false || 
+      (typeof this.options.get_max_request_entity_size === 'number' && approxUrlLength <= this.options.get_max_request_entity_size)
         ? 'GET'
         : 'POST';
 
